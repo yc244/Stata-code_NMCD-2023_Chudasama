@@ -1,0 +1,598 @@
+***** Participants characteristics by ethnicity and diabetes status *****
+
+* With diabetes 
+sum age_CVDy if diab==1, d
+sum age_CVDy if ethgroup==0 & diab==1, d
+sum age_CVDy if ethgroup==1 & diab==1, d
+sum age_CVDy if ethgroup==2 & diab==1, d
+sum age_CVDy if ethgroup==3 & diab==1, d
+
+tab sex_f     ethgroup  if diab==1, col
+tab imd2007_5 ethgroup  if diab==1, col
+tab smoker    ethgroup  if diab==1, col
+tab highbp    ethgroup  if diab==1, col
+tab lipidlow  ethgroup  if diab==1, col
+
+
+* Without diabetes 
+sum age_CVDy if diab==0, d
+sum age_CVDy if ethgroup==0 & diab==0, d
+sum age_CVDy if ethgroup==1 & diab==0, d
+sum age_CVDy if ethgroup==2 & diab==0, d
+sum age_CVDy if ethgroup==3 & diab==0, d
+
+tab sex_f     ethgroup  if diab==0, col
+tab imd2007_5 ethgroup  if diab==0, col
+tab smoker    ethgroup  if diab==0, col
+tab highbp    ethgroup  if diab==0, col
+tab lipidlow  ethgroup  if diab==0, col
+
+*-------------------------------------------------------------------------------
+
+**** Hazard ratio *******
+
+* Age as time scale
+* Exposure - those with and without diabetes
+* By ethnicity
+* Outcome event is all-cause mortality 
+
+tab death ethgroup if diab==0, col
+tab death ethgroup if diab==1, col
+
+* Follow-up time using age as time scale 
+gen f_time=currentage-age_CVDy
+sum f_time, d
+
+
+* Mortality rate per 100 person years 
+strate 
+
+stset currentage, failure(death == 1) enter(age_CVDy)  id(patid)
+
+stptime if diab==0, title(Person-years) per(100)
+stptime if ethgroup==0 & diab==0, title(Person-years) per(100)
+stptime if ethgroup==1 & diab==0, title(Person-years) per(100)
+stptime if ethgroup==2 & diab==0, title(Person-years) per(100)
+stptime if ethgroup==3 & diab==0, title(Person-years) per(100)
+
+stptime if diab==1, title(Person-years) per(100)
+stptime if ethgroup==0 & diab==1, title(Person-years) per(100)
+stptime if ethgroup==1 & diab==1, title(Person-years) per(100)
+stptime if ethgroup==2 & diab==1, title(Person-years) per(100)
+stptime if ethgroup==3 & diab==1, title(Person-years) per(100)
+
+
+* Unadjusted 
+stpm2  i.diab , df(4) scale(hazard) eform nolog   
+stpm2  i.diab if ethgroup==0, df(4) scale(hazard) eform nolog   
+stpm2  i.diab if ethgroup==1, df(4) scale(hazard) eform nolog   
+stpm2  i.diab if ethgroup==2, df(4) scale(hazard) eform nolog   
+stpm2  i.diab if ethgroup==3, df(4) scale(hazard) eform nolog   
+
+* Adjusted
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5 , df(4) scale(hazard) eform nolog   
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5 if ethgroup==0 , df(4) scale(hazard) eform nolog   
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5 if ethgroup==1 , df(4) scale(hazard) eform nolog   
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5 if ethgroup==2 , df(4) scale(hazard) eform nolog   
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5 if ethgroup==3 , df(4) scale(hazard) eform nolog   
+
+
+*******************************************************************************
+
+**** Remaining life expectancy and years of life lost analysis ****
+
+** At age 50
+range tt50 50 100 100
+gen   t50 = 50 in 1/100
+
+** At age 60 
+range tt60 60 100 100
+gen   t60 = 60 in 1/100
+
+** At age 70
+range tt70 70 100 100
+gen   t70 = 70 in 1/100
+
+
+********* UNADJUSTED MODEL ***********
+
+* All participants
+stpm2  i.diab , df(4) scale(hazard) eform nolog   
+
+
+* At age 50
+predictnl all50_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl all50_1  = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl yll50_a  = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(y_lci50 y_uci50) level(95)					
+
+integ all50_0  tt50
+integ all50_1  tt50
+
+integ yll50_a  tt50  
+integ y_lci50  tt50  
+integ y_uci50  tt50  
+
+
+* At age 60
+predictnl all60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl all60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl yll60_a = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				         	- [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ], ci(y_lci60 y_uci60) level(95)					
+
+integ all60_0 tt60
+integ all60_1 tt60
+
+integ yll60_a tt60 
+integ y_lci60 tt60 
+integ y_uci60 tt60 
+
+
+* At age 70
+predictnl all70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl all70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl yll70_a = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				          - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ], ci(y_lci70 y_uci70) level(95)					
+
+integ all70_0 tt70
+integ all70_1 tt70
+
+integ yll70_a tt70 
+integ y_lci70 tt70 
+integ y_uci70 tt70 
+
+
+*-------------------------------------------------------------------------------
+
+* White 
+stpm2  i.diab if ethgroup==0 , df(4) scale(hazard) eform nolog   
+
+predictnl wh50_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl wh50_1 = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl yll50_wh = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(yll_lci50 yll_uci50) level(95)				
+
+integ wh50_0    tt50
+integ wh50_1    tt50
+
+integ yll50_wh  tt50  
+integ yll_lci50 tt50  
+integ yll_uci50 tt50  
+
+
+* At age 60
+predictnl wh60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl wh60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl yll60_wh = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) )], ci(yll_lci60 yll_uci60) level(95)					
+
+integ wh60_0    tt60
+integ wh60_1    tt60
+
+integ yll60_wh  tt60 
+integ yll_lci60 tt60  
+integ yll_uci60 tt60  
+
+
+* At age 70
+predictnl wh70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl wh70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl yll70_wh = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ], ci(yll_lci70 yll_uci70) level(95)				
+
+integ wh70_0    tt70
+integ wh70_1    tt70
+
+integ yll70_wh  tt70 
+integ yll_lci70 tt70  
+integ yll_uci70 tt70  
+
+*-------------------------------------------------------------------------------
+
+* South Asian 
+stpm2  i.diab if ethgroup==1, df(4) scale(hazard) eform nolog   
+
+* At age 50
+predictnl sa50_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl sa50_1 = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl yll50_sa = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+			             - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(yll_lci50sa yll_uci50sa) level(95)						
+
+integ sa50_0      tt50
+integ sa50_1      tt50
+
+integ yll50_sa    tt50  
+integ yll_lci50sa tt50  
+integ yll_uci50sa tt50  
+
+
+* At age 60
+predictnl sa60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl sa60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl yll60_sa = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ], ci(yll_lci60sa yll_uci60sa) level(95)					
+
+integ sa60_0 	  tt60
+integ sa60_1	  tt60
+
+integ yll60_sa    tt60 
+integ yll_lci60sa tt60 
+integ yll_uci60sa tt60 
+
+
+* At age 70
+predictnl sa70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl sa70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl yll70_sa = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ], ci(yll_lci70sa yll_uci70sa) level(95)				
+
+integ sa70_0 tt70
+integ sa70_1 tt70
+
+integ yll70_sa    tt70 
+integ yll_lci70sa tt70 
+integ yll_uci70sa tt70 
+
+
+*-------------------------------------------------------------------------------
+
+* Black 
+stpm2  i.diab if ethgroup==2, df(4) scale(hazard) eform nolog   
+
+* At age 5
+predictnl bl50_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl bl50_1 = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl yll50_bl = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(yll_lci50bl yll_uci50bl) level(95)					
+
+integ bl50_0      tt50
+integ bl50_1      tt50
+
+integ yll50_bl    tt50  
+integ yll_lci50bl tt50  
+integ yll_uci50bl tt50  
+
+
+* At age 60
+predictnl bl60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl bl60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl yll60_bl = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ], ci(yll_lci60bl yll_uci60bl) level(95)					
+
+integ bl60_0       tt60
+integ bl60_1       tt60
+
+integ yll60_bl    tt60 
+integ yll_lci60bl tt60 
+integ yll_uci60bl tt60 
+
+
+* At age 70
+predictnl bl70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl bl70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl yll70_bl = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ], ci(yll_lci70bl yll_uci70bl) level(95)					
+
+integ bl70_0      tt70
+integ bl70_1	  tt70
+
+integ yll70_bl    tt70 
+integ yll_lci70bl tt70 
+integ yll_uci70bl tt70 
+
+
+*-------------------------------------------------------------------------------
+
+* Other 
+stpm2  i.diab if ethgroup==3, df(4) scale(hazard) eform nolog   
+
+
+* At age 50
+predictnl ot50_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl ot50_1 = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl yll50_ot = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(yll_lci50ot yll_uci50ot) level(95)					
+
+integ ot50_0      tt50
+integ ot50_1      tt50
+
+integ yll50_ot    tt50  
+integ yll_lci50ot tt50  
+integ yll_uci50ot tt50  
+
+
+* At age 60
+predictnl ot60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl ot60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl yll60_ot = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ], ci(yll_lci60ot yll_uci60ot) level(95)				
+
+integ ot60_0      tt60
+integ ot60_1      tt60
+
+integ yll60_ot    tt60 
+integ yll_lci60ot tt60 
+integ yll_uci60ot tt60 
+
+
+* At age 70
+predictnl ot70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl ot70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl yll70_ot = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ], ci(yll_lci70ot yll_uci70ot) level(95)						
+
+integ ot70_0      tt70
+integ ot70_1      tt70
+
+integ yll70_ot    tt70 
+integ yll_lci70ot tt70 
+integ yll_uci70ot tt70 
+
+
+********************************************************************************
+
+*ADJUSTED MODEL - sex, smoke, high bp, lipid lowering med, imd **********
+
+* All participants
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5 , df(4) scale(hazard) eform nolog   
+
+* At age 50
+predictnl aall250_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl aall50_1  = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl ayll50_a = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(ay_lci50 ay_uci50) level(95)					
+
+integ aall250_0 tt50
+integ aall50_1  tt50
+
+integ ayll50_a  tt50  
+integ ay_lci50  tt50  
+integ ay_uci50  tt50  
+
+
+* At age 60
+predictnl aall60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl aall60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl ayll60_a = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ]	, ci(ay_lci60 ay_uci60) level(95)					
+
+integ aall60_0 tt60
+integ aall60_1 tt60
+
+integ ayll60_a tt60 
+integ ay_lci60 tt60 
+integ ay_uci60 tt60 
+
+
+* At age 70
+predictnl aall70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl aall70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl ayll70_a = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				           - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ]	, ci(ay_lci70 ay_uci70) level(95)					
+
+integ aall70_0 tt70
+integ aall70_1 tt70
+
+integ ayll70_a tt70 
+integ ay_lci70 tt70 
+integ ay_uci70 tt70 
+
+
+*----------------------------------------
+
+* White
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5  if ethgroup==0, df(4) scale(hazard) eform nolog   
+
+* At age 50
+predictnl waall250_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl waall50_1  = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl wayll50_a = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(way_lci50 way_uci50) level(95)					
+
+integ waall250_0 tt50
+integ waall50_1  tt50
+
+integ wayll50_a tt50  
+integ way_lci50 tt50  
+integ way_uci50 tt50  
+
+
+* At age 60
+predictnl waall60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl waall60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl wayll60_a = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ]	, ci(way_lci60 way_uci60) level(95)					
+
+integ waall60_0 tt60
+integ waall60_1 tt60
+
+integ wayll60_a tt60 
+integ way_lci60 tt60 
+integ way_uci60 tt60 
+
+
+* At age 70
+predictnl waall70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl waall70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl wayll70_a = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ]	, ci(way_lci70 way_uci70) level(95)					
+
+integ waall70_0 tt70
+integ waall70_1 tt70
+
+integ wayll70_a tt70 
+integ way_lci70 tt70 
+integ way_uci70 tt70 
+
+*------------------------------------------------
+
+*South Asian
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5  if ethgroup==1 , df(4) scale(hazard) eform nolog   
+
+
+* At age 50
+predictnl saall250_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl saall50_1 = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl sayll50_a = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(say_lci50 say_uci50) level(95)					
+
+integ saall250_0 tt50
+integ saall50_1 tt50
+
+integ sayll50_a tt50  
+integ say_lci50 tt50  
+integ say_uci50 tt50  
+
+
+* At age 60
+predictnl saall60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl saall60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl sayll60_a = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ]	, ci(say_lci60 say_uci60) level(95)					
+
+integ saall60_0 tt60
+integ saall60_1 tt60
+
+integ sayll60_a tt60 
+integ say_lci60 tt60 
+integ say_uci60 tt60 
+
+
+* At age 70
+predictnl saall70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl saall70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl sayll70_a = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ]	, ci(say_lci70 say_uci70) level(95)					
+
+integ saall70_0 tt70
+integ saall70_1 tt70
+
+integ sayll70_a tt70 
+integ say_lci70 tt70 
+integ say_uci70 tt70 
+
+*--------------------------------------------------------------
+
+* Black
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5  if ethgroup==2, df(4) scale(hazard) eform nolog   
+
+
+* At age 50
+predictnl baall250_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl baall50_1  = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl bayll50_a = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(bay_lci50 bay_uci50) level(95)					
+
+integ baall250_0 tt50
+integ baall50_1 tt50
+
+integ bayll50_a tt50  
+integ bay_lci50 tt50  
+integ bay_uci50 tt50  
+
+
+* At age 60
+predictnl baall60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl baall60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl bayll60_a = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ]	, ci(bay_lci60 bay_uci60) level(95)					
+
+integ baall60_0 tt60
+integ baall60_1 tt60
+
+integ bayll60_a tt60 
+integ bay_lci60 tt60 
+integ bay_uci60 tt60 
+
+
+* At age 70
+predictnl baall70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl baall70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl bayll70_a = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ]	, ci(bay_lci70 bay_uci70) level(95)					
+
+integ baall70_0 tt70
+integ baall70_1 tt70
+
+integ bayll70_a tt70 
+integ bay_lci70 tt70 
+integ bay_uci70 tt70 
+
+
+*---------------------------------------------------------------
+
+*Other
+stpm2  i.diab sex_f smoker highbp lipidlow imd2007_5  if ethgroup==3 , df(4) scale(hazard) eform nolog   
+
+
+* At age 50
+predictnl oaall250_0 = predict(meansurv timevar(tt50) at( diab 0)) / predict(meansurv timevar(t50) at(diab 0))	
+predictnl oaall50_1  = predict(meansurv timevar(tt50) at( diab 1)) / predict(meansurv timevar(t50) at(diab 1))	
+
+predictnl oayll50_a = [predict( meansurv timevar(tt50) at( diab 0) ) / predict( meansurv timevar(t50) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt50) at( diab 1) ) / predict( meansurv timevar(t50) at(diab 1) ) ], ci(oay_lci50 oay_uci50) level(95)					
+
+integ oaall250_0 tt50
+integ oaall50_1  tt50
+
+integ oayll50_a tt50  
+integ oay_lci50 tt50  
+integ oay_uci50 tt50  
+
+
+* At age 60
+predictnl oaall60_0 = predict(meansurv timevar(tt60) at( diab 0)) / predict(meansurv timevar(t60) at(diab 0))	
+predictnl oaall60_1 = predict(meansurv timevar(tt60) at( diab 1)) / predict(meansurv timevar(t60) at(diab 1))	
+
+predictnl oayll60_a = [predict( meansurv timevar(tt60) at( diab 0) ) / predict( meansurv timevar(t60) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt60) at( diab 1) ) / predict( meansurv timevar(t60) at(diab 1) ) ]	, ci(oay_lci60 oay_uci60) level(95)					
+
+integ oaall60_0 tt60
+integ oaall60_1 tt60
+
+integ oayll60_a tt60 
+integ oay_lci60 tt60 
+integ oay_uci60 tt60 
+
+
+* At age 70
+predictnl oaall70_0 = predict(meansurv timevar(tt70) at( diab 0)) / predict(meansurv timevar(t70) at(diab 0))	
+predictnl oaall70_1 = predict(meansurv timevar(tt70) at( diab 1)) / predict(meansurv timevar(t70) at(diab 1))	
+
+predictnl oayll70_a = [predict( meansurv timevar(tt70) at( diab 0) ) / predict( meansurv timevar(t70) at(diab 0))] ///
+				            - [predict( meansurv timevar(tt70) at( diab 1) ) / predict( meansurv timevar(t70) at(diab 1) ) ]	, ci(oay_lci70 oay_uci70) level(95)					
+
+integ oaall70_0 tt70
+integ oaall70_1 tt70
+
+integ oayll70_a tt70 
+integ oay_lci70 tt70 
+integ oay_uci70 tt70 
+
